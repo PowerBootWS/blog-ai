@@ -4,7 +4,7 @@ import ChatInterface from './components/ChatInterface';
 import Header from './components/Header';
 import { User, Message, BlogPlan } from './types';
 import { login, register } from './services/mockAuth';
-import { sendMessage, extractBlogPlan } from './services/mockAI';
+import { sendMessage, extractBlogPlan } from './services/aiService';
 
 function App() {
   const [user, setUser] = useState<User | null>(null);
@@ -12,6 +12,7 @@ function App() {
   const [error, setError] = useState<string | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
   const [blogPlan, setBlogPlan] = useState<BlogPlan | null>(null);
+  const [isAiResponding, setIsAiResponding] = useState(false);
 
   // Check for saved user on component mount
   useEffect(() => {
@@ -90,11 +91,27 @@ function App() {
     
     // Get AI response
     try {
-      const aiResponse = await sendMessage(content, [...messages, userMessage]);
+      setIsAiResponding(true);
+      const aiResponse = await sendMessage(content);
       setMessages(prev => [...prev, aiResponse]);
     } catch (err) {
       console.error('Failed to get AI response', err);
+      // Add error message
+      const errorMessage: Message = {
+        id: Date.now().toString(),
+        content: "Sorry, I couldn't process your request. Please try again.",
+        role: 'assistant',
+        timestamp: new Date()
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    } finally {
+      setIsAiResponding(false);
     }
+  };
+
+  const handleNewConversation = () => {
+    setMessages([]);
+    setBlogPlan(null);
   };
 
   if (loading) {
@@ -125,6 +142,8 @@ function App() {
               messages={messages} 
               onSendMessage={handleSendMessage}
               blogPlan={blogPlan}
+              onNewConversation={handleNewConversation}
+              isAiResponding={isAiResponding}
             />
           </div>
         )}

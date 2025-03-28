@@ -1,17 +1,21 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Download, Copy, CheckCheck } from 'lucide-react';
+import { Send, Download, Copy, CheckCheck, RefreshCw, Loader2 } from 'lucide-react';
 import { Message, BlogPlan } from '../types';
 
 interface ChatInterfaceProps {
   messages: Message[];
   onSendMessage: (content: string) => void;
   blogPlan: BlogPlan | null;
+  onNewConversation: () => void;
+  isAiResponding: boolean;
 }
 
 const ChatInterface: React.FC<ChatInterfaceProps> = ({ 
   messages, 
   onSendMessage,
-  blogPlan
+  blogPlan,
+  onNewConversation,
+  isAiResponding
 }) => {
   const [input, setInput] = useState('');
   const [copied, setCopied] = useState(false);
@@ -19,7 +23,7 @@ const ChatInterface: React.FC<ChatInterfaceProps> = ({
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim()) {
+    if (input.trim() && !isAiResponding) {
       onSendMessage(input);
       setInput('');
     }
@@ -77,6 +81,18 @@ ${blogPlan.schedule}
 
   return (
     <div className="flex flex-col h-full">
+      <div className="border-b border-gray-200 p-3 flex justify-between items-center">
+        <h2 className="text-lg font-medium text-gray-800">Chat with AI</h2>
+        <button
+          onClick={onNewConversation}
+          disabled={isAiResponding}
+          className={`inline-flex items-center px-3 py-1.5 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 ${isAiResponding ? 'opacity-50 cursor-not-allowed' : ''}`}
+        >
+          <RefreshCw className="h-4 w-4 mr-1.5" />
+          New Conversation
+        </button>
+      </div>
+      
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 ? (
           <div className="flex items-center justify-center h-full">
@@ -110,6 +126,14 @@ ${blogPlan.schedule}
               </div>
             </div>
           ))
+        )}
+        {isAiResponding && (
+          <div className="flex justify-start">
+            <div className="bg-gray-100 text-gray-800 rounded-lg p-4 flex items-center">
+              <Loader2 className="h-5 w-5 mr-2 animate-spin text-indigo-600" />
+              <span>AI is thinking...</span>
+            </div>
+          </div>
         )}
         <div ref={messagesEndRef} />
       </div>
@@ -162,12 +186,22 @@ ${blogPlan.schedule}
             onChange={(e) => setInput(e.target.value)}
             placeholder="Ask about blog planning, content ideas, or audience targeting..."
             className="flex-1 p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            disabled={isAiResponding}
           />
           <button
             type="submit"
-            className="bg-indigo-600 text-white p-3 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            disabled={isAiResponding || !input.trim()}
+            className={`p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
+              isAiResponding || !input.trim() 
+                ? 'bg-indigo-400 cursor-not-allowed' 
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white'
+            }`}
           >
-            <Send size={20} />
+            {isAiResponding ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Send size={20} />
+            )}
           </button>
         </form>
       </div>
